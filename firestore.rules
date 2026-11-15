@@ -1,0 +1,296 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function hasValidTimestampsOnCreate(data) {
+      return data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function hasValidTimestampsOnUpdate(data) {
+      return data.createdAt == existing().createdAt &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 1. TrackedOpportunity Validator
+    function isValidTrackedOpportunity(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.packageName is string && data.packageName.size() >= 1 && data.packageName.size() <= 120 &&
+             data.store in ['Google Play', 'Galaxy Store', 'Amazon Appstore'] &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 40 &&
+             data.downloads is int && data.downloads >= 0 && data.downloads <= 1000000000 &&
+             data.rating is number && data.rating >= 0.0 && data.rating <= 5.0 &&
+             data.monthsDormant is int && data.monthsDormant >= 0 && data.monthsDormant <= 240 &&
+             data.opportunityScore is int && data.opportunityScore >= 0 && data.opportunityScore <= 100 &&
+             data.estMonthlyProfitUsd is number && data.estMonthlyProfitUsd >= 0.0 && data.estMonthlyProfitUsd <= 10000000.0 &&
+             data.recommendedSubPriceUsd is number && data.recommendedSubPriceUsd >= 0.0 && data.recommendedSubPriceUsd <= 999.0 &&
+             data.status in ['scouted', 'redesigning', 'launched', 'archived'] &&
+             data.redesignNotes is string && data.redesignNotes.size() <= 500 &&
+             data.marketingHook is string && data.marketingHook.size() <= 300;
+    }
+
+    // 2. SubscriptionPlan Validator
+    function isValidSubscriptionPlan(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.platform in ['Google Play', 'Galaxy Store', 'Web Billing'] &&
+             data.billingCycle in ['weekly', 'monthly', 'annual'] &&
+             data.priceUsd is number && data.priceUsd >= 0.49 && data.priceUsd <= 999.99 &&
+             data.trialDays is int && data.trialDays >= 0 && data.trialDays <= 90 &&
+             data.conversionRatePct is number && data.conversionRatePct >= 0.0 && data.conversionRatePct <= 100.0 &&
+             data.monthlyChurnPct is number && data.monthlyChurnPct >= 0.0 && data.monthlyChurnPct <= 100.0 &&
+             data.activeSubscribers is int && data.activeSubscribers >= 0 && data.activeSubscribers <= 10000000 &&
+             data.isActive is bool;
+    }
+
+    // 3. PaymentGatewayConfig Validator
+    function isValidPaymentGateway(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.providerName in ['Google Play Billing v7', 'Stripe Web Checkout', 'RevenueCat Entitlements', 'Samsung IAP'] &&
+             data.skuId is string && data.skuId.size() >= 1 && data.skuId.size() <= 100 &&
+             data.mode in ['sandbox', 'live'] &&
+             data.webhookConfigured is bool &&
+             data.gracePeriodEnabled is bool &&
+             data.isConnected is bool &&
+             data.payoutReady is bool;
+    }
+
+    // 4. AlertRule Validator
+    function isValidAlertRule(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 80 &&
+             data.metricKey in ['dormancy_months', 'opportunity_score', 'churn_pct', 'mrr_usd', 'downloads'] &&
+             data.operator in ['gt', 'lt'] &&
+             data.threshold is number && data.threshold >= 0.0 && data.threshold <= 1000000000.0 &&
+             data.isEnabled is bool;
+    }
+
+    // 5. SavedReportConfig Validator
+    function isValidSavedReport(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 80 &&
+             data.datasetType in ['opportunities', 'benchmarks', 'subscriptions', 'executive_kpi'] &&
+             data.storeFilter in ['All', 'Google Play', 'Galaxy Store', 'Amazon Appstore'] &&
+             data.minOpportunityScore is int && data.minOpportunityScore >= 0 && data.minOpportunityScore <= 100 &&
+             data.selectedColumns is list && data.selectedColumns.size() >= 1 && data.selectedColumns.size() <= 15 &&
+             data.selectedColumns[0] is string;
+    }
+
+    // 6. AiStrategyBrief Validator
+    function isValidAiStrategyBrief(data, userId) {
+      return data.userId is string && data.userId == userId &&
+             data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 80 &&
+             data.platform is string && data.platform.size() >= 1 && data.platform.size() <= 40 &&
+             data.competitiveMoatScore is int && data.competitiveMoatScore >= 0 && data.competitiveMoatScore <= 100 &&
+             data.monetizationStrategy is string && data.monetizationStrategy.size() >= 1 && data.monetizationStrategy.size() <= 600 &&
+             data.redesignPriorities is string && data.redesignPriorities.size() >= 1 && data.redesignPriorities.size() <= 600 &&
+             data.marketingPlaybook is string && data.marketingPlaybook.size() >= 1 && data.marketingPlaybook.size() <= 600 &&
+             data.retentionHooks is string && data.retentionHooks.size() >= 1 && data.retentionHooks.size() <= 600;
+    }
+
+    // User-scoped collections
+    match /users/{userId} {
+
+      match /trackedApps/{appId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(appId);
+        allow create: if isOwner(userId) &&
+                         isValidId(appId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'name', 'packageName', 'store', 'category',
+                           'downloads', 'rating', 'monthsDormant', 'opportunityScore',
+                           'estMonthlyProfitUsd', 'recommendedSubPriceUsd', 'status',
+                           'redesignNotes', 'marketingHook', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'name', 'packageName', 'store', 'category',
+                           'downloads', 'rating', 'monthsDormant', 'opportunityScore',
+                           'estMonthlyProfitUsd', 'recommendedSubPriceUsd', 'status',
+                           'redesignNotes', 'marketingHook', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidTrackedOpportunity(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(appId) &&
+                         existing().status != 'archived' &&
+                         isValidTrackedOpportunity(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'store', 'category', 'downloads', 'rating',
+                           'monthsDormant', 'opportunityScore', 'estMonthlyProfitUsd',
+                           'recommendedSubPriceUsd', 'status', 'redesignNotes',
+                           'marketingHook', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(appId);
+      }
+
+      match /subscriptionPlans/{planId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(planId);
+        allow create: if isOwner(userId) &&
+                         isValidId(planId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'name', 'platform', 'billingCycle', 'priceUsd',
+                           'trialDays', 'conversionRatePct', 'monthlyChurnPct',
+                           'activeSubscribers', 'isActive', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'name', 'platform', 'billingCycle', 'priceUsd',
+                           'trialDays', 'conversionRatePct', 'monthlyChurnPct',
+                           'activeSubscribers', 'isActive', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidSubscriptionPlan(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(planId) &&
+                         isValidSubscriptionPlan(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'name', 'platform', 'billingCycle', 'priceUsd', 'trialDays',
+                           'conversionRatePct', 'monthlyChurnPct', 'activeSubscribers',
+                           'isActive', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(planId);
+      }
+
+      match /paymentGateways/{gatewayId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(gatewayId);
+        allow create: if isOwner(userId) &&
+                         isValidId(gatewayId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'providerName', 'skuId', 'mode', 'webhookConfigured',
+                           'gracePeriodEnabled', 'isConnected', 'payoutReady', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'providerName', 'skuId', 'mode', 'webhookConfigured',
+                           'gracePeriodEnabled', 'isConnected', 'payoutReady', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidPaymentGateway(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(gatewayId) &&
+                         isValidPaymentGateway(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'skuId', 'mode', 'webhookConfigured', 'gracePeriodEnabled',
+                           'isConnected', 'payoutReady', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(gatewayId);
+      }
+
+      match /alertRules/{ruleId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(ruleId);
+        allow create: if isOwner(userId) &&
+                         isValidId(ruleId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'metricKey', 'operator', 'threshold',
+                           'isEnabled', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'metricKey', 'operator', 'threshold',
+                           'isEnabled', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidAlertRule(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(ruleId) &&
+                         isValidAlertRule(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'metricKey', 'operator', 'threshold', 'isEnabled', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(ruleId);
+      }
+
+      match /savedReports/{reportId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(reportId);
+        allow create: if isOwner(userId) &&
+                         isValidId(reportId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'datasetType', 'storeFilter',
+                           'minOpportunityScore', 'selectedColumns', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'datasetType', 'storeFilter',
+                           'minOpportunityScore', 'selectedColumns', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidSavedReport(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(reportId) &&
+                         isValidSavedReport(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'datasetType', 'storeFilter', 'minOpportunityScore',
+                           'selectedColumns', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(reportId);
+      }
+
+      match /strategyBriefs/{briefId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(briefId);
+        allow create: if isOwner(userId) &&
+                         isValidId(briefId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'targetName', 'platform', 'competitiveMoatScore',
+                           'monetizationStrategy', 'redesignPriorities', 'marketingPlaybook',
+                           'retentionHooks', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'targetName', 'platform', 'competitiveMoatScore',
+                           'monetizationStrategy', 'redesignPriorities', 'marketingPlaybook',
+                           'retentionHooks', 'createdAt', 'updatedAt'
+                         ]) &&
+                         hasValidTimestampsOnCreate(incoming()) &&
+                         isValidAiStrategyBrief(incoming(), userId);
+        allow update: if isOwner(userId) &&
+                         isValidId(briefId) &&
+                         isValidAiStrategyBrief(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         hasValidTimestampsOnUpdate(incoming()) &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'targetName', 'platform', 'competitiveMoatScore',
+                           'monetizationStrategy', 'redesignPriorities', 'marketingPlaybook',
+                           'retentionHooks', 'updatedAt'
+                         ]);
+        allow delete: if isOwner(userId) && isValidId(briefId);
+      }
+    }
+  }
+}

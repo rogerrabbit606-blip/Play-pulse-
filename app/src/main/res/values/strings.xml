@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">PlayPulse</string>
+    <string name="auth_tagline">Play Store Revival &amp; MRR Intelligence</string>
+    <string name="auth_headline">Claim abandoned apps. Scale recurring revenue.</string>
+    <string name="auth_subtitle">Discover dormant Play Store gems, benchmark top-grossing UX patterns, model cross-platform subscriptions, and export CSV insights.</string>
+    <string name="auth_tab_sign_in">Sign In</string>
+    <string name="auth_tab_sign_up">Sign Up</string>
+    <string name="auth_sign_in_title">Access your analytics workspace</string>
+    <string name="auth_sign_in_desc">Sign in with your Google Account to restore your tracked opportunities, MRR models, and Gemini AI playbooks.</string>
+    <string name="auth_sign_up_title">Create your PlayPulse account</string>
+    <string name="auth_sign_up_desc">New to PlayPulse? Sign up with Google to auto-provision a private Firestore workspace preloaded with starter benchmarks.</string>
+    <string name="sign_in_google">Sign in with Google</string>
+    <string name="sign_up_google">Sign up with Google</string>
+    <string name="auth_checking_session">Checking saved Google session…</string>
+    <string name="auth_dismiss_error">Dismiss</string>
+    <string name="auth_footer_note">Protected by Firebase Auth &amp; App Check. Your Google Account handles both sign-in and new account creation.</string>
+    <string name="auth_pill_radar">Abandoned App Radar</string>
+    <string name="auth_pill_mrr">Recurring MRR Engine</string>
+    <string name="auth_pill_ai">Gemini AI Predictions</string>
+    <string name="auth_pill_export">CSV Analytics Export</string>
+    <string name="auth_preview_label">LIVE WORKSPACE PREVIEW</string>
+    <string name="auth_preview_value">3 Stores • Real-Time MRR &amp; AI Radar</string>
+    <string name="cd_auth_hero">PlayPulse dark obsidian analytics hero graphic</string>
+    <string name="cd_opportunity_banner">PlayPulse market opportunity radar banner</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_radar">Radar</string>
+    <string name="nav_monetize">Monetize</string>
+    <string name="nav_ai_lab">AI Lab</string>
+    <string name="nav_export">Export</string>
+    <string name="sign_out">Sign out</string>
+</resources>

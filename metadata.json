@@ -1,0 +1,8 @@
+{
+  "name": "Remix PlayPulse",
+  "description": "Play Store opportunity analytics, abandoned app discovery, subscription ROI modeling, AI predictive insights, and CSV export dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

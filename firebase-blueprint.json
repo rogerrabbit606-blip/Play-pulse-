@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "TrackedOpportunity": {
+      "title": "TrackedOpportunity",
+      "description": "An abandoned or legacy Play Store app tracked for redesign, subscription monetization, and profit revival.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "name": { "type": "string", "description": "App display title." },
+        "packageName": { "type": "string", "description": "Store package identifier." },
+        "store": { "type": "string", "enum": ["Google Play", "Galaxy Store", "Amazon Appstore"] },
+        "category": { "type": "string", "description": "App store category." },
+        "downloads": { "type": "integer", "description": "Historical install volume." },
+        "rating": { "type": "number", "description": "Current average rating out of 5.0." },
+        "monthsDormant": { "type": "integer", "description": "Months since last developer update." },
+        "opportunityScore": { "type": "integer", "description": "Composite revival & profit score 0-100." },
+        "estMonthlyProfitUsd": { "type": "number", "description": "Estimated monthly net profit potential in USD." },
+        "recommendedSubPriceUsd": { "type": "number", "description": "Recommended monthly subscription anchor price in USD." },
+        "status": { "type": "string", "enum": ["scouted", "redesigning", "launched", "archived"] },
+        "redesignNotes": { "type": "string", "description": "Developer notes for modern UI redesign." },
+        "marketingHook": { "type": "string", "description": "Primary ASO and positioning hook." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp set via FieldValue.serverTimestamp()." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp set via FieldValue.serverTimestamp()." }
+      },
+      "required": [
+        "userId", "name", "packageName", "store", "category", "downloads",
+        "rating", "monthsDormant", "opportunityScore", "estMonthlyProfitUsd",
+        "recommendedSubPriceUsd", "status", "redesignNotes", "marketingHook",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "SubscriptionPlan": {
+      "title": "SubscriptionPlan",
+      "description": "Recurring subscription tier modeled for a platform with conversion and churn metrics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "platform": { "type": "string", "enum": ["Google Play", "Galaxy Store", "Web Billing"] },
+        "billingCycle": { "type": "string", "enum": ["weekly", "monthly", "annual"] },
+        "priceUsd": { "type": "number" },
+        "trialDays": { "type": "integer" },
+        "conversionRatePct": { "type": "number" },
+        "monthlyChurnPct": { "type": "number" },
+        "activeSubscribers": { "type": "integer" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "name", "platform", "billingCycle", "priceUsd",
+        "trialDays", "conversionRatePct", "monthlyChurnPct",
+        "activeSubscribers", "isActive", "createdAt", "updatedAt"
+      ]
+    },
+    "PaymentGatewayConfig": {
+      "title": "PaymentGatewayConfig",
+      "description": "Same-day payment gateway and subscription entitlement integration configuration.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "providerName": { "type": "string", "enum": ["Google Play Billing v7", "Stripe Web Checkout", "RevenueCat Entitlements", "Samsung IAP"] },
+        "skuId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["sandbox", "live"] },
+        "webhookConfigured": { "type": "boolean" },
+        "gracePeriodEnabled": { "type": "boolean" },
+        "isConnected": { "type": "boolean" },
+        "payoutReady": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "providerName", "skuId", "mode", "webhookConfigured",
+        "gracePeriodEnabled", "isConnected", "payoutReady", "createdAt", "updatedAt"
+      ]
+    },
+    "AlertRule": {
+      "title": "AlertRule",
+      "description": "Automated KPI and market opportunity alert threshold rule.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "metricKey": { "type": "string", "enum": ["dormancy_months", "opportunity_score", "churn_pct", "mrr_usd", "downloads"] },
+        "operator": { "type": "string", "enum": ["gt", "lt"] },
+        "threshold": { "type": "number" },
+        "isEnabled": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "title", "metricKey", "operator", "threshold",
+        "isEnabled", "createdAt", "updatedAt"
+      ]
+    },
+    "SavedReportConfig": {
+      "title": "SavedReportConfig",
+      "description": "Customizable analytics report preset for CSV export.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "datasetType": { "type": "string", "enum": ["opportunities", "benchmarks", "subscriptions", "executive_kpi"] },
+        "storeFilter": { "type": "string", "enum": ["All", "Google Play", "Galaxy Store", "Amazon Appstore"] },
+        "minOpportunityScore": { "type": "integer" },
+        "selectedColumns": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "title", "datasetType", "storeFilter",
+        "minOpportunityScore", "selectedColumns", "createdAt", "updatedAt"
+      ]
+    },
+    "AiStrategyBrief": {
+      "title": "AiStrategyBrief",
+      "description": "Gemini AI Logic competitive landscape, redesign, and monetization playbook.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "targetName": { "type": "string" },
+        "platform": { "type": "string" },
+        "competitiveMoatScore": { "type": "integer" },
+        "monetizationStrategy": { "type": "string" },
+        "redesignPriorities": { "type": "string" },
+        "marketingPlaybook": { "type": "string" },
+        "retentionHooks": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "targetName", "platform", "competitiveMoatScore",
+        "monetizationStrategy", "redesignPriorities", "marketingPlaybook",
+        "retentionHooks", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/trackedApps/{appId}": {
+      "schema": { "$ref": "#/entities/TrackedOpportunity" },
+      "description": "User's claimed and tracked abandoned Play Store app opportunities."
+    },
+    "/users/{userId}/subscriptionPlans/{planId}": {
+      "schema": { "$ref": "#/entities/SubscriptionPlan" },
+      "description": "User's recurring subscription models across platforms."
+    },
+    "/users/{userId}/paymentGateways/{gatewayId}": {
+      "schema": { "$ref": "#/entities/PaymentGatewayConfig" },
+      "description": "User's payment gateway and entitlement configurations."
+    },
+    "/users/{userId}/alertRules/{ruleId}": {
+      "schema": { "$ref": "#/entities/AlertRule" },
+      "description": "User's automated KPI and market alert rules."
+    },
+    "/users/{userId}/savedReports/{reportId}": {
+      "schema": { "$ref": "#/entities/SavedReportConfig" },
+      "description": "User's customizable CSV export report presets."
+    },
+    "/users/{userId}/strategyBriefs/{briefId}": {
+      "schema": { "$ref": "#/entities/AiStrategyBrief" },
+      "description": "User's saved Gemini AI competitive and monetization playbooks."
+    }
+  }
+}
